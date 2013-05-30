@@ -2,6 +2,7 @@
 
 #### CONFIGURATION ######
 # (C) George Shuklin, 2010
+# LGPL license
 #
 # email - emails, separated by colomn (,)
 # CMDTOOL - full path to raid cmd tool (cmdtool, megamon, megarc.bin, etc)
