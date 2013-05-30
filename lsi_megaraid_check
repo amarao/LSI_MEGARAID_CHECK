@@ -1,0 +1,49 @@
+#!/bin/sh
+
+#### CONFIGURATION ######
+# (C) George Shuklin, 2010
+#
+# email - emails, separated by colomn (,)
+# CMDTOOL - full path to raid cmd tool (cmdtool, megamon, megarc.bin, etc)
+# array - monitored array number (starts from '0').
+#
+#########################
+email="adim@example.com,helpdesk@example.net"
+CMDTOOL="/usr/local/sbin/megarc.bin"
+array=0
+
+
+### script body ###
+
+bad_pattern="(DEGRADED|RBLD|UNUSABLE|FAILED)"
+hotspare_pattern="HotSpare"
+
+diag=`$CMDTOOL -dispCfg -a$array|grep -v Scanning`
+
+status_text=`echo $diag|strings|grep Status|head -n 1`
+echo "$diag"|grep -E $bad_pattern >/dev/null
+status=$?
+
+echo "$diag"|grep $hotspare_pattern >/dev/null
+hotspare=$?
+
+if test  $hotspare -eq 0
+then
+        hotspare_text="(Hotspare ok)"
+else
+        hotspare_text="(NO HOTSPARE disk found!)"
+fi
+
+if test  $status -eq 0  -o !  $hotspare -eq 0
+then
+        message="Error has been detected on `hostname --fqdn` at `date` :\\n\\r\\n\\r\\n"
+        message=$message"\\n\\n\\t\\tRAID STATUS: $status_text\\n"
+        message=$message"\\n\\n\\t\\tHOTSPARE STATUS:$hotspare_text\\n"
+        message=$message"\\n\\n\\n\\nraw data:\\n\\n$diag"
+        echo -e "$message"| mail $email -s "RAID FAILED  on `hostname --fqdn`"
+        logger "RAID failed"
+        logger "$status_text $hotspare_text"
+else
+        logger "$status_text $hotspare_text"
+
+fi
